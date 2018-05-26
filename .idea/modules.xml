@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Moview.iml" filepath="$PROJECT_DIR$/Moview.iml" />
+      <module fileurl="file://C:\Users\Ali\Documents\recycler-view-search-master\Moview2\Moview.iml" filepath="C:\Users\Ali\Documents\recycler-view-search-master\Moview2\Moview.iml" />
       <module fileurl="file://$PROJECT_DIR$/Moview2.iml" filepath="$PROJECT_DIR$/Moview2.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
