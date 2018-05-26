@@ -43,6 +43,47 @@
 
                     <android.support.design.widget.TextInputLayout
                         android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/prompt_password">
+
+                        <EditText
+                            android:id="@+id/password"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/prompt_password"
+                            android:imeActionId="6"
+                            android:imeActionLabel="@string/action_sign_in_short"
+                            android:imeOptions="actionUnspecified"
+                            android:inputType="textPassword"
+                            android:maxLines="1"
+                            android:shadowColor="@color/common_google_signin_btn_text_light_pressed"
+                            android:shadowDy="10"
+                            android:singleLine="true" />
+
+                    </android.support.design.widget.TextInputLayout>
+
+                    <Button
+                        android:id="@+id/button2"
+                        android:layout_width="200dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical|center_horizontal"
+                        android:background="@drawable/fill_rounded_corner"
+                        android:elevation="5dp"
+                        android:fontFamily="serif"
+                        android:text="@string/login"
+                        android:textColor="@color/common_google_signin_btn_text_dark_default"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <android.support.design.widget.TextInputLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content">
 
                         <AutoCompleteTextView
@@ -63,7 +104,7 @@
                         android:layout_gravity="center_vertical|center_horizontal"
                         android:layout_marginBottom="10dp"
                         android:layout_marginTop="16dp"
-                        android:background="@drawable/circle_confirm_button"
+                        android:background="@drawable/green_circle_button"
                         android:backgroundTint="@color/confirm_btn"
                         android:elevation="10dp"
                         android:shadowColor="#110"
@@ -73,32 +114,9 @@
 
                 </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <android.support.design.widget.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent">
-
-                        <EditText
-                            android:id="@+id/password"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/prompt_password"
-                            android:imeActionId="6"
-                            android:imeActionLabel="@string/action_sign_in_short"
-                            android:imeOptions="actionUnspecified"
-                            android:inputType="textPassword"
-                            android:maxLines="1"
-                            android:singleLine="true" />
-
-                    </android.support.design.widget.TextInputLayout>
-                </LinearLayout>
-
             </ViewFlipper>
 
         </LinearLayout>
     </ScrollView>
+
 </LinearLayout>
