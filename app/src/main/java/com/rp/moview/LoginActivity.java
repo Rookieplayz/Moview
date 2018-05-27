@@ -19,6 +19,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -76,6 +77,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
     /**Variables*/
     private String mUsername,mPassword,mEmail;
     private Login loginTask;
+    private ArrayList<String>usernames=new ArrayList<>();
+    private ArrayList<String>emails=new ArrayList<>();
+    private FirebaseAuth firebaseAuth=FirebaseAuth.getInstance();
+    private FirebaseDatabase fDatabase=FirebaseDatabase.getInstance();
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,6 +112,23 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
 
 
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.v("Onstart","retrieving items from database...");
+        searchDatabaseForEmailAndUsernames();
+        StringBuilder emailResults= new StringBuilder();
+        StringBuilder usernamesResults= new StringBuilder();
+        for(String s:emails)
+            emailResults.append(s).append("\n");
+        for (String s:usernames)
+            usernamesResults.append(s).append("\n");
+
+
+        Log.wtf("Retrieved: ","Email: \n"+emailResults+"\nUsername: \n"+usernamesResults);
+    }
+
     /**Start of Auto-generated code*/
     private void populateAutoComplete() {
         if (!mayRequestContacts()) {
@@ -269,6 +292,35 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
 
         }
     }
+    public void searchDatabaseForEmailAndUsernames()
+    {
+        /**Load emails and usernames ArrayLists*/
+        DatabaseReference ref=fDatabase.getReference("User Information");
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                /**Go through all values at the Node UserInformation*/
+                for(DataSnapshot ds:dataSnapshot.getChildren())
+                {
+                    /**We Created a class called UserInformation that has values which could be
+                     * mapped to the UserInformation branch in FireBase
+                     * make sure every variable name here matches that of the one we created
+                     * at fireBase real-time database
+                     * otherwise there will be a problem trying to get the desired values*/
+                    UserInformation users=ds.getValue(UserInformation.class);
+                    assert users != null;
+                    emails.add(users.getEmail());
+                    usernames.add(users.getUsername());
+                }
+                /**Now emails and usernames should be loaded up*/
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     private boolean checkIfEmail() {
         return false;
@@ -282,36 +334,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
     public class UserAuth extends AsyncTask<Void, Void, Boolean>
     {
         private String username,password,email;
-        private ArrayList<String>usernames=new ArrayList<>();
-        private ArrayList<String>emails=new ArrayList<>();
-        private FirebaseAuth firebaseAuth=FirebaseAuth.getInstance();
-        private FirebaseDatabase fDatabase=FirebaseDatabase.getInstance();
+
         public UserAuth()
         {
-
+            username=mUsername;
+            password=mPassword;
+            email=mEmail;
         }
-        public void searchDatabaseForEmailAndUsernames()
-        {
-            /**Load emails and usernames ArrayLists*/
-            DatabaseReference ref=fDatabase.getReference("User Information");
-            ref.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    for(DataSnapshot ds:dataSnapshot.getChildren())
-                    {
-                        UserInformation users=ds.getValue(UserInformation.class);
-                        assert users != null;
-                        emails.add(users.getEmail());
-                        usernames.add(users.getUsername());
-                    }
-                }
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-        }
 
         @Override
         protected Boolean doInBackground(Void... voids)
@@ -326,71 +356,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
             }
 
             // TODO: sign in the user here.
-            firebaseAuth.signInWithEmailAndPassword(email, )
-                    .addOnCompleteListener( new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
-                            if (task.isSuccessful()) {
-                                // Sign in success, update UI with the signed-in user's information
-                                Log.d(TAG, "signInWithEmail:success");
-                                FirebaseUser user = fAuthTask.getCurrentUser();
-                                //System.out.println()("The logged user is: "+user);
-                                Intent intent=new Intent(LoginActivity.this,MainActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                startActivity(intent);
 
-                                //updateUI(user);
-                                finish();
-                            } else {
-                                // If sign in fails, display a message to the user.
-                                Log.w(TAG, "signInWithEmail:failure", task.getException());
-
-                                Toast.makeText(LoginActivity.this,task.getException().getMessage(),
-                                        Toast.LENGTH_LONG).show();
-                                forgetPassword.setText(getString(R.string.resetPassword));
-                                forgetPassword.setOnClickListener(new OnClickListener() {
-                                    @Override
-                                    public void onClick(View view) {
-                                        startActivity(new Intent("ie.ul.o.daysaver.ResetPasswordActivity"));
-                                    }
-                                });
-
-                                //System.out.println()("User Doesn't Exists");
-                                // updateUI(null);
-                                // finish();
-                            }
-
-                            // ...
-                        }
-                    });
             return true;
         }
-            return null;
-        }
 
-        public String getUsername() {
-            return username;
-        }
 
-        public void setUsername(String username) {
-            this.username = username;
-        }
 
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
 
 
     }
