@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -19,8 +20,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -29,10 +34,16 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ViewFlipper;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -40,6 +51,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.EventListener;
 import java.util.List;
 
 import static android.Manifest.permission.READ_CONTACTS;
@@ -69,13 +81,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
     private EditText passwordField;
     private AutoCompleteTextView usernameField;
     private ViewFlipper viewFlipper;
+    private TextView signUp;
 
     /**Layout*/
-    private LinearLayout page1,page2,mLoginForm;
+    private LinearLayout page1,page2,mLoginForm,login_background;
     private ScrollView loginForm;
     private ProgressBar progressBar;
+    private Toolbar toolbar;
     /**Variables*/
-    private String mUsername,mPassword,mEmail;
+    private String mUsername="",mPassword="",mEmail="";
     private Login loginTask;
     private ArrayList<String>usernames=new ArrayList<>();
     private ArrayList<String>emails=new ArrayList<>();
@@ -87,30 +101,85 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+
         /**Initialize Buttons*/
         confirmBtn=findViewById(R.id.confirmBtn);
         loginButton=findViewById(R.id.loginBtn);
         /**Initialize EditText*/
         usernameField=findViewById(R.id.email);
         passwordField=findViewById(R.id.password);
+        /**Initialize TextView*/
+        signUp=findViewById(R.id.notMember);
         /**Initialize viewFlipper*/
         viewFlipper=findViewById(R.id.viewFlipper);
         /**Initialize LinearLayout*/
         page1=findViewById(R.id.page1);
         page2=findViewById(R.id.page2);
         mLoginForm=findViewById(R.id.email_login_form);
+        login_background=findViewById(R.id.login_background);
         /**Initialize ScrollView*/
         loginForm=findViewById(R.id.login_form);
         /**Initialize ProgressBar*/
-        progressBar=findViewById(R.id.progressBar);
+        progressBar=findViewById(R.id.login_progress);
+        /**Initialize toolbar*/
+        toolbar=findViewById(R.id.toolbar2);
+        setSupportActionBar(toolbar);
 
+
+        /**Start background animation*/
+
+       /* System.out.println("BG: "+login_background.getHeight()+", "+login_background.getWidth());
+        final ViewTreeObserver observer= login_background.getViewTreeObserver();
+        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+
+                Background_Animations.BlurBackground(context);
+                //observer.removeOnGlobalLayoutListener(this);
+            }
+        });*/
+
+        Background_Animations.background=login_background;
+        Background_Animations.AnimateLoginBackGroundGradient();
         /**Populate auto-complete*/
         populateAutoComplete();
 
+        signUp.setVisibility(View.GONE);
         //Initialize login
         loginTask =new Login(mUsername,mPassword,mEmail,context);
+        handleButtons();
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+
+        getMenuInflater().inflate(R.menu.menus, menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.reg) {
+           //TODO: create register Activity
+            return true;
+        }
+        else if (id == R.id.home) {
+
+          //TODO: MainActivity
+            return true;
+        }
 
 
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -118,18 +187,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
         super.onStart();
         Log.v("Onstart","retrieving items from database...");
         searchDatabaseForEmailAndUsernames();
-        StringBuilder emailResults= new StringBuilder();
-        StringBuilder usernamesResults= new StringBuilder();
-        for(String s:emails)
-            emailResults.append(s).append("\n");
-        for (String s:usernames)
-            usernamesResults.append(s).append("\n");
-
-
-        Log.wtf("Retrieved: ","Email: \n"+emailResults+"\nUsername: \n"+usernamesResults);
-    }
+       }
 
     /**Start of Auto-generated code*/
+
     private void populateAutoComplete() {
         if (!mayRequestContacts()) {
             return;
@@ -149,6 +210,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
             }
         }
     }
+
     private boolean mayRequestContacts() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return true;
@@ -262,12 +324,51 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
     }
 
     /**end of auto-generated code*/
+    /**All Event handlers for buttons*/
+    public void handleButtons()
+    {
+        confirmBtn.setOnClickListener(e->{mUsername=usernameField.getText().toString();isEmail(); attemptLogin();});
+        loginButton.setOnClickListener(e->{
+            mPassword=passwordField.getText().toString();
+        if(passwordField.getText().toString().isEmpty())
+            passwordField.setError(loginTask.isEmptyField(passwordField.getText().toString()));
+        else
+        {
+            passwordField.setError(null);
+            showProgress(true);
+            mAuthTask = new UserAuth();
+            mAuthTask.execute((Void) null);
+        }
+        });
+    }
+
+    private void isEmail() {
+        if(usernameField.getText().toString().contains("@"))
+        {
+            mEmail=usernameField.getText().toString();
+        }
+        else {
+            int index=usernames.indexOf(usernameField.getText().toString());
+            if(index!=-1)
+            {
+                mEmail=emails.get(index);
+            }
+            mUsername = usernameField.getText().toString();
+        }
+    }
+
     private void goToPasswordPage()
     {
         viewFlipper.showNext();
+        toolbar.setNavigationIcon(getResources().getDrawable(R.drawable.back_w));
+        toolbar.setNavigationOnClickListener(e->{
+            goToUsernamePage();
+        });
+
     }
     private void goToUsernamePage()
     {
+        toolbar.setNavigationIcon(null);
         viewFlipper.showPrevious();
     }
     private void goToProgressPage()
@@ -283,36 +384,107 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
      */
     private void attemptLogin()
     {
-        if(checkIfEmail())
-        {
-            if(checkIfEmailExist())
-            {
+        //Empty field
 
+        if(usernameField.getText().toString().isEmpty())
+            usernameField.setError(loginTask.isEmptyField(usernameField.getText().toString()));
+        else
+        {
+            usernameField.setError(null);
+            /**If the entered username or email is in the accomodated arraylist then go to pass word*/
+            if(loginTask.isMatch(emails,mEmail))
+            {
+                snackMessage(page1,getString(R.string.userFound)+usernameField.getText().toString(),Snackbar.LENGTH_SHORT);
+                goToPasswordPage();
+            }
+            else  if(loginTask.isMatch(usernames,mUsername))
+            {
+                snackMessage(page1,getString(R.string.userFound)+usernameField.getText().toString(),Snackbar.LENGTH_SHORT);
+                goToPasswordPage();
+            }
+            else
+            {
+                snackMessage(page1,getString(R.string.userNotFound,usernameField.getText().toString()),Snackbar.LENGTH_INDEFINITE);
             }
 
         }
     }
-    public void searchDatabaseForEmailAndUsernames()
+
+    @Override
+    public void onBackPressed() {
+        if(page2.getVisibility()==View.VISIBLE)
+        {
+            goToUsernamePage();
+        }
+        else
+        {
+            finish();
+        }
+    }
+
+    private void toastMessage(String s) {
+    Toast.makeText(this,s,Toast.LENGTH_SHORT).show();
+    }
+    private void snackMessage(View v,String s,int length)
     {
+        Snackbar.make(v,s,length).show();
+    }
+
+    public static class UserKeys
+    {
+        public static  ArrayList<String> users=new ArrayList<>();
+
+        public UserKeys(ArrayList<String> users) {
+            this.users = users;
+        }
+
+        public ArrayList<String> getUserInformation() {
+            return users;
+        }
+
+        public void setUserInformation(ArrayList<String> users) {
+            this.users = users;
+        }
+    }
+
+
+    public void searchDatabaseForEmailAndUsernames() {
         /**Load emails and usernames ArrayLists*/
-        DatabaseReference ref=fDatabase.getReference("User Information");
-        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+
+
+
+        /**Go through all values at the
+         * Node UserInformation*/
+        DatabaseReference db = fDatabase.getReference().child("User Information");
+        /**We Created a class called UserInformation that has values which could be
+         * mapped to the UserInformation branch in FireBase
+         * make sure every variable name here matches that of the one we created
+         * at fireBase real-time database
+         * otherwise there will be a problem trying to get the desired values*/
+
+        db.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                /**Go through all values at the Node UserInformation*/
-                for(DataSnapshot ds:dataSnapshot.getChildren())
-                {
-                    /**We Created a class called UserInformation that has values which could be
-                     * mapped to the UserInformation branch in FireBase
-                     * make sure every variable name here matches that of the one we created
-                     * at fireBase real-time database
-                     * otherwise there will be a problem trying to get the desired values*/
-                    UserInformation users=ds.getValue(UserInformation.class);
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    System.out.println("DS: "+ ds);
+                    UserInformation users = ds.getValue(UserInformation.class);
+
                     assert users != null;
                     emails.add(users.getEmail());
                     usernames.add(users.getUsername());
+                    UserKeys.users.add(ds.getKey());
                 }
-                /**Now emails and usernames should be loaded up*/
+                StringBuilder emailResults= new StringBuilder();
+                StringBuilder usernamesResults= new StringBuilder();
+                for(String s:emails)
+                    emailResults.append(s).append("\n");
+                for (String s:usernames)
+                    usernamesResults.append(s).append("\n");
+
+
+                Log.wtf("Retrieved: ","Email: \n"+emailResults+"\nUsername: \n"+usernamesResults);
+
+
             }
 
             @Override
@@ -320,6 +492,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
 
             }
         });
+
     }
 
     private boolean checkIfEmail() {
@@ -340,6 +513,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
             username=mUsername;
             password=mPassword;
             email=mEmail;
+            Log.wtf("Credentials: ","Username: "+username+"\nPassword: "+password+"\nEmail: "+email);
         }
 
 
@@ -357,13 +531,62 @@ public class LoginActivity extends AppCompatActivity implements LoaderManager.Lo
 
             // TODO: sign in the user here.
 
+            firebaseAuth.signInWithEmailAndPassword(email,password)
+                    .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if(task.isSuccessful())
+                            {
+                                Log.d("signInWithEmail: ", "Success");
+                                FirebaseUser user = firebaseAuth.getCurrentUser();
+                                //TODO: Launch MainActivity
+                                finish();
+                            }
+                            else{
+                                Log.d("signInWithEmail: ", "Success");
+                                signUp.setVisibility(View.VISIBLE);
+                                snackMessageWithButton(page2,getString(R.string.error_incorrect_password),Snackbar.LENGTH_INDEFINITE,getString(R.string.forgotPassword), new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+
+                                       //TODO: password Recovery
+                                    }
+                                }, Color.GREEN);
+
+                            }
+                        }
+                    });
+
             return true;
         }
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            mAuthTask = null;
+            showProgress(false);
+
+            if (success) {
+                // finish();
+            } else {
+                passwordField.setError(getString(R.string.error_incorrect_password));
+                passwordField.requestFocus();
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            mAuthTask = null;
+            showProgress(false);
+        }
+    }
 
 
 
-
-
+    private void snackMessageWithButton(View v, String msg, int l, String btnMsg, View.OnClickListener click,int color) {
+        Snackbar snackbar = Snackbar
+                .make(v, msg,l );
+        snackbar.setAction(btnMsg,click);
+        snackbar.setActionTextColor(color);
+        snackbar.show();
     }
 
 }

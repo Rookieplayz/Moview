@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/clicked_confirm_btn">
+    <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="oval">
+        <size android:width="100dp"
+            android:height="100dp"/>
+
+        <solid android:color="@color/clicked_confirm_btn"/>
+    </shape>
+    <item android:drawable="@drawable/fill_rounded_corner" />
+</ripple>

@@ -20,5 +20,9 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="signUP">Not A member? Sign up.</string>
     <string name="emptyField">This field is required</string>
+    <string name="userFound">User Found:</string>
+    <string name="userNotFound">Oops, User %1$s not Found</string>
+    <string name="forgotPassword">Reset Password?</string>
 </resources>
